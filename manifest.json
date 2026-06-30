@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Lichess Stockfish Bot",
+  "version": "2.0.0",
+  "description": "Automatically plays chess on Lichess.org using Stockfish engine at maximum strength.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "debugger"
+  ],
+  "host_permissions": [
+    "https://lichess.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://lichess.org/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Lichess Stockfish Bot",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "stockfish.js",
+        "stockfish.wasm"
+      ],
+      "matches": [
+        "https://lichess.org/*"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

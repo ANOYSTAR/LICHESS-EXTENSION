@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lichess Stockfish Bot</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 310px;
+      min-height: 400px;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #0f1f38 0%, #1a2a4a 100%);
+      padding: 15px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(88,166,255,0.15);
+      position: relative;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 18px; right: 18px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(88,166,255,0.4), transparent);
+    }
+    .header-icon {
+      font-size: 30px;
+      filter: drop-shadow(0 0 12px rgba(88,166,255,0.6));
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    .header-text h1 {
+      font-size: 15px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #58a6ff, #bc8cff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.2px;
+    }
+    .header-text p {
+      font-size: 10.5px;
+      color: #6e7681;
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    /* ── Status ── */
+    .status-section {
+      padding: 12px 18px;
+      background: rgba(255,255,255,0.018);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #30363d;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+    .status-dot.active {
+      background: #3fb950;
+      box-shadow: 0 0 14px #3fb950;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .status-dot.error {
+      background: #f85149;
+      box-shadow: 0 0 14px #f85149;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px #3fb950; }
+      50% { opacity: 0.7; box-shadow: 0 0 18px #3fb950; }
+    }
+    .status-label { font-size: 11.5px; color: #8b949e; }
+    .status-value { font-size: 12.5px; font-weight: 700; color: #e6edf3; }
+    #colorText { font-size: 11px; font-weight: 600; }
+
+    /* ── Info Cards ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      padding: 12px 18px;
+    }
+    .info-card {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 9px 8px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .info-card:hover { border-color: rgba(88,166,255,0.25); }
+    .info-card-label {
+      font-size: 9px;
+      color: #6e7681;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .info-card-value {
+      font-size: 14px;
+      font-weight: 800;
+      color: #58a6ff;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      padding: 0 18px 12px;
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      flex: 1;
+      padding: 9px 12px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-start {
+      background: linear-gradient(135deg, #1a7f37, #3fb950);
+      color: #fff;
+      box-shadow: 0 3px 16px rgba(63,185,80,0.3);
+    }
+    .btn-start:hover:not(:disabled) {
+      background: linear-gradient(135deg, #238636, #56d364);
+      box-shadow: 0 4px 22px rgba(63,185,80,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-stop {
+      background: linear-gradient(135deg, #6e1a1a, #da3633);
+      color: #fff;
+      box-shadow: 0 3px 16px rgba(218,54,51,0.3);
+    }
+    .btn-stop:hover:not(:disabled) {
+      background: linear-gradient(135deg, #b91c1c, #f85149);
+      box-shadow: 0 4px 22px rgba(218,54,51,0.5);
+      transform: translateY(-1px);
+    }
+    .btn:disabled { cursor: not-allowed; }
+
+    /* ── Settings ── */
+    .settings-section {
+      padding: 0 18px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .setting-row {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .setting-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+    }
+    .setting-label {
+      font-size: 10px;
+      color: #6e7681;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .setting-value {
+      font-size: 12px;
+      color: #58a6ff;
+      font-weight: 800;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      appearance: none;
+      background: #21262d;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #58a6ff;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(88,166,255,0.6);
+      transition: all 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.35);
+      box-shadow: 0 0 14px rgba(88,166,255,0.9);
+    }
+
+    /* ── Warning ── */
+    .warning {
+      margin: 0 18px 12px;
+      padding: 9px 12px;
+      background: rgba(187,128,9,0.08);
+      border: 1px solid rgba(187,128,9,0.25);
+      border-radius: 8px;
+      font-size: 10.5px;
+      color: #9e7212;
+      line-height: 1.55;
+    }
+    .warning strong { color: #d29922; }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 9px 18px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #30363d;
+    }
+    .footer span:first-child { color: #484f58; }
+
+    /* ── Not Lichess view ── */
+    .not-lichess {
+      padding: 44px 22px;
+      text-align: center;
+      color: #6e7681;
+    }
+    .not-lichess .big-icon { font-size: 52px; margin-bottom: 14px; }
+    .not-lichess h2 { font-size: 14px; color: #e6edf3; margin-bottom: 9px; font-weight: 700; }
+    .not-lichess p { font-size: 11.5px; line-height: 1.7; color: #8b949e; }
+    .not-lichess a { color: #58a6ff; text-decoration: none; }
+    .not-lichess a:hover { text-decoration: underline; }
+    .open-btn {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 8px 20px;
+      background: linear-gradient(135deg, #1f6feb, #388bfd);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .open-btn:hover { opacity: 0.85; transform: translateY(-1px); text-decoration: none; }
+
+    #not-lichess-view { display: none; }
+  </style>
+</head>
+<body>
+  <div class="popup-container">
+
+    <!-- Not on Lichess -->
+    <div id="not-lichess-view" class="not-lichess">
+      <div class="big-icon">♟️</div>
+      <h2>Open Lichess.org First</h2>
+      <p>Navigate to lichess.org and start or join a game, then click the extension again.</p>
+      <a class="open-btn" href="https://lichess.org" target="_blank">Open Lichess →</a>
+    </div>
+
+    <!-- Main UI -->
+    <div id="main-view">
+      <div class="header">
+        <div class="header-icon">♟️</div>
+        <div class="header-text">
+          <h1>Stockfish Auto-Bot</h1>
+          <p>Lichess Engine Assistant • Powered by SF 16</p>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="status-section">
+        <div class="status-row">
+          <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span class="status-label">Status:&nbsp;</span>
+            <span class="status-value" id="statusText">Idle</span>
+          </div>
+          <span id="colorText" style="font-size:11px;color:#6e7681;">—</span>
+        </div>
+      </div>
+
+      <!-- Info Cards -->
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-card-label">Engine</div>
+          <div class="info-card-value" id="engineStatus">—</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-label">Color</div>
+          <div class="info-card-value" id="playingAs">—</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-label">Moves</div>
+          <div class="info-card-value" id="movesCount">0</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="btn btn-start" id="startBtn">▶ Start Bot</button>
+        <button class="btn btn-stop" id="stopBtn" disabled style="opacity:0.5">■ Stop</button>
+      </div>
+
+      <!-- Settings -->
+      <div class="settings-section">
+        <div class="setting-row">
+          <div class="setting-header">
+            <span class="setting-label">Search Depth</span>
+            <span class="setting-value" id="depthDisplay">20</span>
+          </div>
+          <input type="range" id="depthSlider" min="5" max="30" value="20">
+        </div>
+        <div class="setting-row">
+          <div class="setting-header">
+            <span class="setting-label">Move Delay</span>
+            <span class="setting-value" id="delayDisplay">300ms</span>
+          </div>
+          <input type="range" id="delaySlider" min="0" max="3000" step="50" value="300">
+        </div>
+      </div>
+
+      <!-- Warning -->
+      <div class="warning">
+        ⚠️ <strong>Fair Play Notice:</strong> Using bots on Lichess violates their Terms of Service and can result in account bans. Use only for personal practice or testing.
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <span>Stockfish 16 • MV3 Extension</span>
+        <span>v2.0.0</span>
+      </div>
+    </div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
