@@ -1,4 +1,4 @@
-# ♟ Lichess Stockfish Auto-Bot — Chrome Extension
+# ♟ Lichess Stockfish Auto-Bot — Chrome Extension ( GREY TECHNOLOGY )
 
 Automatically plays chess on **lichess.org** using the **Stockfish 16** engine at full strength.
 
@@ -77,3 +77,7 @@ Using automated bots on Lichess **violates their Terms of Service** and can resu
 | Engine not loading | Refresh the page and re-enable the bot |
 | Moves wrong squares | Try refreshing; board orientation may need re-detection |
 | Extension not showing | Check `chrome://extensions` — enable if disabled |
+
+
+
+THIS EXTENSION IS MADE BY - GREY TECHNOLOGY by dhruvtara
